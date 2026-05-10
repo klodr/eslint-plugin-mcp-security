@@ -1,0 +1,91 @@
+# CodeRabbit configuration
+# Docs: https://docs.coderabbit.ai/guides/configure-coderabbit
+#
+# NOTE — CodeRabbit must NOT push commits to this repo.
+# The branch protection on main requires "approval from someone other
+# than the last pusher". On a solo-maintainer repo, a CodeRabbit-authored
+# commit makes the bot both the last pusher AND the approver, which
+# makes the rule impossible to satisfy and deadlocks the PR.
+#
+# Never use `@coderabbitai apply suggestions`, `@coderabbitai auto_commit`,
+# or click GitHub's "Commit suggestion" button on CodeRabbit inline
+# suggestions. If a suggestion is valuable, copy the diff and commit it
+# as a human — keep CodeRabbit's role strictly read-only.
+
+language: en-US
+early_access: false
+
+reviews:
+  profile: assertive          # stricter feedback (vs "chill")
+  request_changes_workflow: true
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  poem: false                 # no decorative poetry
+  in_progress_fortune: false  # no fortune-cookie message during reviews
+  review_status: true
+  collapse_walkthrough: false
+  abort_on_close: true
+  auto_title_instructions: |
+    Use Conventional Commits format: <type>[(<scope>)]: <subject>
+    Types: feat, fix, docs, chore, refactor, test, ci, build, perf, revert.
+    Scope is optional (e.g. `chore: ...` is valid).
+    Cap the entire title (including type and optional scope) at 72 characters.
+
+  auto_review:
+    enabled: true
+    drafts: false
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+    base_branches:
+      - main
+
+  pre_merge_checks:
+    docstrings:
+      # The codebase deliberately keeps comments to non-obvious WHY only.
+      # ESLint rule meta-objects already carry the user-facing description;
+      # forced JSDoc would just paraphrase them.
+      mode: off
+    title:
+      mode: error
+      requirements: |
+        Conventional Commits format: <type>[(<scope>)]: <subject>.
+        Types: feat, fix, docs, chore, refactor, test, ci, build, perf, revert.
+        Scope is optional (e.g. `chore: ...` is valid without scope).
+        Subject must be in imperative mood, lowercase, no trailing period.
+        Total title length (including type/scope) must be <= 72 characters.
+    # If a specific human reviewer is explicitly requested on a PR
+    # (via GitHub's "Reviewers" UI), CodeRabbit's own approval must NOT
+    # count as a substitute for theirs. Does not affect the common case
+    # where no specific reviewer is requested — CodeRabbit can still
+    # approve routine PRs (including Dependabot bumps) and satisfy the
+    # "approval from someone other than the last pusher" branch
+    # protection rule.
+    override_requested_reviewers_only: true
+
+  path_instructions:
+    - path: "src/rules/**"
+      instructions: |
+        ESLint rule implementations. For every rule:
+        - meta.type is "problem" / "suggestion" / "layout" appropriately
+        - meta.docs.description is a single sentence, useful for users
+        - meta.docs.url points to the README anchor for that rule
+        - meta.messages defines all reported message ids
+        - meta.schema is explicit (not "any") if the rule takes options
+        Verify the rule does NOT have side effects across calls (rules
+        must be stateless beyond what `create()` returns per file).
+    - path: "src/index.js"
+      instructions: |
+        Plugin entrypoint exposed via `main` in package.json. Verify:
+        - Every rule registered in `plugin.rules` is also exposed via
+          a flat-config `recommended` preset under `plugin.configs`
+        - The plugin meta.name matches package.json `name`
+    - path: "tests/**"
+      instructions: |
+        ESLint RuleTester specs (Vitest harness). Each rule must have
+        BOTH valid and invalid cases. For invalid cases, assert the
+        exact `messageId` (not just a substring of the message text).
+
+chat:
+  auto_reply: true
+  art: false                  # no ASCII/emoji art in chat responses

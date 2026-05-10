@@ -1,0 +1,77 @@
+name: Bug report
+description: Report a bug in eslint-plugin-mcp-security
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: |
+        Minimal repro: a code snippet that triggers the wrong behaviour
+        + the eslint config block applying the rule + the actual ESLint
+        output you observed.
+      placeholder: |
+        ```js
+        // file: example.js
+        const x = "...";
+        ```
+        ```js
+        // eslint.config.mjs
+        import mcpSecurity from 'eslint-plugin-mcp-security';
+        export default [
+          { plugins: { 'mcp-security': mcpSecurity },
+            rules: { 'mcp-security/no-encoded-prompt-injection': 'error' } },
+        ];
+        ```
+        Expected: no error.
+        Actual: <paste the ESLint output>
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version
+      description: From `npm ls eslint-plugin-mcp-security`
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: eslint-version
+    attributes:
+      label: ESLint version
+      description: From `npx eslint --version`
+      placeholder: "9.x.x"
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node version
+      description: From `node --version`
+      placeholder: "v22.x.x"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - "False positive (rule fires on legitimate code)"
+        - "False negative (rule misses an injection vector)"
+        - "Crash / unhandled error in the rule"
+        - "Unhelpful message / poor location"
+        - "Other"
+    validations:
+      required: true

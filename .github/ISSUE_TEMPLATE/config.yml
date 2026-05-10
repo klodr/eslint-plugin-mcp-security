@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/klodr/eslint-plugin-mcp-security/security/advisories/new
+    about: Please report security vulnerabilities privately.
+  - name: Discussions
+    url: https://github.com/klodr/eslint-plugin-mcp-security/discussions
+    about: Ask questions or discuss ideas.

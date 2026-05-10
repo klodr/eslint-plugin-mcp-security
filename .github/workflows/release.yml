@@ -1,0 +1,225 @@
+name: Release & npm publish
+
+# Triggered by `git push origin vX.Y.Z`. Creates the GitHub Release from the
+# matching CHANGELOG.md section, signs the published source artifact with
+# Sigstore, then publishes to npm with provenance.
+#
+# This package ships `src/` as-is (no bundling step) so the signing subject
+# is `src/index.js` — the actual entrypoint loaded by ESLint via `main` in
+# package.json.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+# Default workflow permissions: read-only. The publish job below escalates
+# only what it needs, only for tag pushes.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node 22
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+  publish:
+    name: Create release, sign artifacts, publish to npm
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # upload signed artifacts to the GitHub Release
+      id-token: write # npm provenance + Sigstore keyless signing
+      attestations: write # actions/attest-build-provenance writes to the attestation API
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node 22
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "22"
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Prune devDependencies before SBOM generation so the SBOM reflects
+      # the RUNTIME dependency tree, not the test/lint toolchain.
+      # eslint-plugin-mcp-security has zero runtime deps, but this future-
+      # proofs the workflow.
+      - name: Prune devDependencies before SBOM generation
+        run: npm prune --omit=dev
+
+      # Extract the CHANGELOG section for this version. Fail fast if missing,
+      # so we never publish a version with no notes.
+      - name: Extract changelog section for ${{ github.ref_name }}
+        id: changelog
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$PACKAGE_VERSION" != "$VERSION" ]; then
+            echo "ERROR: tag $TAG does not match package.json version $PACKAGE_VERSION" >&2
+            exit 1
+          fi
+          NOTES=$(awk -v ver="^## \\\\[${VERSION}\\\\]" '$0 ~ ver {flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md)
+          if [ -z "$(echo "$NOTES" | tr -d '[:space:]')" ]; then
+            echo "ERROR: no CHANGELOG.md section found for version $VERSION" >&2
+            exit 1
+          fi
+          {
+            echo "notes<<CHANGELOG_EOF"
+            echo "$NOTES"
+            echo ""
+            echo "**Full changelog:** https://github.com/${{ github.repository }}/blob/${TAG}/CHANGELOG.md"
+            echo "**npm:** https://www.npmjs.com/package/eslint-plugin-mcp-security/v/${VERSION}"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create or update GitHub Release for ${{ github.ref_name }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          NOTES: ${{ steps.changelog.outputs.notes }}
+        run: |
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release edit "$TAG" \
+              --title "$TAG" \
+              --notes "$NOTES" \
+              --repo "${{ github.repository }}"
+          else
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "$NOTES" \
+              --repo "${{ github.repository }}"
+          fi
+
+      # Sign + upload signed assets BEFORE the (non-idempotent) npm publish,
+      # so a transient failure on signing doesn't leave us with a published
+      # version we cannot re-run the workflow for.
+
+      - name: Generate Sigstore attestation for src/index.js
+        id: attest
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-path: src/index.js
+
+      # SBOMs of the runtime dependency tree (devDependencies pruned above).
+      # syft walks the lockfile + node_modules and produces SPDX (json) +
+      # CycloneDX (json) — both shipped so downstream consumers can pick
+      # whichever their scanner speaks.
+      - name: Generate SPDX SBOM (SPDX 2.3 JSON)
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Generate CycloneDX SBOM (1.6 JSON)
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Sign SPDX SBOM attestation
+        id: attest_spdx
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: src/index.js
+          sbom-path: sbom.spdx.json
+
+      - name: Sign CycloneDX SBOM attestation
+        id: attest_cdx
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: src/index.js
+          sbom-path: sbom.cdx.json
+
+      - name: Attach signed artifacts + SBOMs to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+          SPDX_BUNDLE_PATH: ${{ steps.attest_spdx.outputs.bundle-path }}
+          CDX_BUNDLE_PATH: ${{ steps.attest_cdx.outputs.bundle-path }}
+        run: |
+          test -n "${BUNDLE_PATH:-}" || { echo "Missing attestation bundle-path output"; exit 1; }
+          test -f "$BUNDLE_PATH" || { echo "Bundle file not found: $BUNDLE_PATH"; exit 1; }
+          test -n "${SPDX_BUNDLE_PATH:-}" || { echo "Missing SPDX SBOM attestation bundle-path"; exit 1; }
+          test -f "$SPDX_BUNDLE_PATH" || { echo "SPDX SBOM attestation bundle not found: $SPDX_BUNDLE_PATH"; exit 1; }
+          test -n "${CDX_BUNDLE_PATH:-}" || { echo "Missing CycloneDX SBOM attestation bundle-path"; exit 1; }
+          test -f "$CDX_BUNDLE_PATH" || { echo "CycloneDX SBOM attestation bundle not found: $CDX_BUNDLE_PATH"; exit 1; }
+          test -f sbom.spdx.json || { echo "SPDX SBOM missing"; exit 1; }
+          test -f sbom.cdx.json || { echo "CycloneDX SBOM missing"; exit 1; }
+          mkdir -p release-assets
+          # The Sigstore bundle (.sigstore) satisfies Scorecard's "signed" check.
+          cp src/index.js release-assets/index.js
+          cp "$BUNDLE_PATH" release-assets/index.js.sigstore
+          cp "$SPDX_BUNDLE_PATH" release-assets/sbom.spdx.sigstore
+          cp "$CDX_BUNDLE_PATH" release-assets/sbom.cdx.sigstore
+          cp sbom.spdx.json release-assets/sbom.spdx.json
+          cp sbom.cdx.json release-assets/sbom.cdx.json
+          # The DSSE envelope inside the bundle IS the SLSA in-toto attestation.
+          # Extracting it to .intoto.jsonl satisfies Scorecard's "provenance"
+          # check — Scorecard recognises *.intoto.jsonl specifically.
+          DSSE=$(jq -c '.dsseEnvelope' "$BUNDLE_PATH")
+          if [ -z "$DSSE" ] || [ "$DSSE" = "null" ]; then
+            echo "ERROR: no .dsseEnvelope in Sigstore bundle at $BUNDLE_PATH" >&2
+            exit 1
+          fi
+          printf '%s\n' "$DSSE" > release-assets/index.js.intoto.jsonl
+          gh release upload "$TAG" \
+            release-assets/index.js \
+            release-assets/index.js.sigstore \
+            release-assets/index.js.intoto.jsonl \
+            release-assets/sbom.spdx.json \
+            release-assets/sbom.spdx.sigstore \
+            release-assets/sbom.cdx.json \
+            release-assets/sbom.cdx.sigstore \
+            --repo "${{ github.repository }}" \
+            --clobber
+
+      # `npm prune --omit=dev` above removed husky (devDep), so any
+      # lifecycle script that references it now fails. Strip those from
+      # package.json before publishing — npm always includes package.json
+      # in the tarball regardless of `files`, so the *published* manifest
+      # will lack `prepare`. That divergence is intentional and harmless:
+      # consumers do not run `prepare` on installed packages.
+      - name: Strip prepare + prepublishOnly before publish
+        run: |
+          npm pkg delete scripts.prepare || true
+          npm pkg delete scripts.prepublishOnly || true
+
+      - name: Publish to npm
+        run: npm publish --access public --provenance --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
