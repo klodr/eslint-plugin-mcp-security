@@ -21,9 +21,9 @@ const plugin = {
 // Recommended config (flat-config style)
 plugin.configs = {
   recommended: {
-    plugins: { 'mcp-security': plugin },
+    plugins: { 'security-mcp': plugin },
     rules: {
-      'mcp-security/no-encoded-prompt-injection': 'error',
+      'security-mcp/no-encoded-prompt-injection': 'error',
     },
   },
 };

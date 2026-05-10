@@ -68,7 +68,7 @@ jobs:
 
       # Prune devDependencies before SBOM generation so the SBOM reflects
       # the RUNTIME dependency tree, not the test/lint toolchain.
-      # eslint-plugin-mcp-security has zero runtime deps, but this future-
+      # eslint-plugin-security-mcp has zero runtime deps, but this future-
       # proofs the workflow.
       - name: Prune devDependencies before SBOM generation
         run: npm prune --omit=dev
@@ -96,7 +96,7 @@ jobs:
             echo "$NOTES"
             echo ""
             echo "**Full changelog:** https://github.com/${{ github.repository }}/blob/${TAG}/CHANGELOG.md"
-            echo "**npm:** https://www.npmjs.com/package/eslint-plugin-mcp-security/v/${VERSION}"
+            echo "**npm:** https://www.npmjs.com/package/eslint-plugin-security-mcp/v/${VERSION}"
             echo "CHANGELOG_EOF"
           } >> "$GITHUB_OUTPUT"
 

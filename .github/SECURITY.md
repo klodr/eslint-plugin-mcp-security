@@ -2,7 +2,7 @@
 
 ## Scope
 
-This policy covers `eslint-plugin-mcp-security` itself: the published
+This policy covers `eslint-plugin-security-mcp` itself: the published
 npm package, the source in this repository, the GitHub Actions workflows,
 and the release artifacts.
 
@@ -34,7 +34,7 @@ can be filed as public issues.
 
 ## Verifying releases
 
-Every published release of `eslint-plugin-mcp-security` is
+Every published release of `eslint-plugin-security-mcp` is
 cryptographically signed. There is **no private signing key** to manage:
 signing is keyless via [Sigstore](https://www.sigstore.dev/) using
 GitHub's OIDC identity through the
@@ -47,8 +47,8 @@ Three independent ways to verify:
 ### 1. npm package — npm CLI
 
 ```bash
-npm view eslint-plugin-mcp-security@<version> --json | jq .dist.attestations
-npm install --ignore-scripts eslint-plugin-mcp-security@<version>
+npm view eslint-plugin-security-mcp@<version> --json | jq .dist.attestations
+npm install --ignore-scripts eslint-plugin-security-mcp@<version>
 # or, for the strict provenance check across the dependency tree:
 npm audit signatures
 ```
@@ -56,9 +56,9 @@ npm audit signatures
 ### 2. GitHub Release artifacts — `gh attestation`
 
 ```bash
-gh release download v<version> --repo klodr/eslint-plugin-mcp-security \
+gh release download v<version> --repo klodr/eslint-plugin-security-mcp \
   --pattern 'index.js*'
-gh attestation verify index.js --repo klodr/eslint-plugin-mcp-security
+gh attestation verify index.js --repo klodr/eslint-plugin-security-mcp
 ```
 
 ### 3. Sigstore bundle — `cosign`
@@ -66,7 +66,7 @@ gh attestation verify index.js --repo klodr/eslint-plugin-mcp-security
 ```bash
 cosign verify-blob-attestation \
   --bundle index.js.sigstore \
-  --certificate-identity-regexp '^https://github\.com/klodr/eslint-plugin-mcp-security/' \
+  --certificate-identity-regexp '^https://github\.com/klodr/eslint-plugin-security-mcp/' \
   --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
   index.js
 ```
@@ -91,13 +91,13 @@ Each SBOM carries its own Sigstore attestation binding it to the
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in `eslint-plugin-mcp-security`,
+If you discover a security vulnerability in `eslint-plugin-security-mcp`,
 please report it **privately** so we can address it before any disclosure.
 
 ### Preferred channel: Private vulnerability reporting
 
 Use GitHub's
-[Private vulnerability reporting](https://github.com/klodr/eslint-plugin-mcp-security/security/advisories/new)
+[Private vulnerability reporting](https://github.com/klodr/eslint-plugin-security-mcp/security/advisories/new)
 feature. Maintainers will receive your report directly.
 
 ### Alternative
@@ -135,4 +135,4 @@ is released.
   failed to catch. Report it to that project — this plugin's role is
   defense-in-depth, not a guarantee.
 
-Thanks for helping keep `eslint-plugin-mcp-security` and its users safe.
+Thanks for helping keep `eslint-plugin-security-mcp` and its users safe.

@@ -9,7 +9,7 @@ breaking changes require a major bump:
 
 - **Plugin export shape**: `plugin.rules`, `plugin.configs.recommended`,
   `plugin.meta.{name,version}`.
-- **Rule names**: `mcp-security/no-encoded-prompt-injection` will not
+- **Rule names**: `security-mcp/no-encoded-prompt-injection` will not
   be renamed in a non-major release.
 - **Rule severities in `recommended`**: a rule won't be downgraded
   from `error` to `warn` (or vice versa) in a minor — it requires a
