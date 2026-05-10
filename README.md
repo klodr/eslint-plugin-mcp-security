@@ -1,9 +1,16 @@
 # eslint-plugin-security-mcp
 
-[![npm version](https://img.shields.io/npm/v/eslint-plugin-security-mcp.svg)](https://www.npmjs.com/package/eslint-plugin-security-mcp)
 [![CI](https://github.com/klodr/eslint-plugin-security-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/klodr/eslint-plugin-security-mcp/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/klodr/eslint-plugin-security-mcp/actions/workflows/codeql.yml/badge.svg)](https://github.com/klodr/eslint-plugin-security-mcp/actions/workflows/codeql.yml)
+[![Tested with Vitest](https://img.shields.io/badge/tested%20with-vitest-yellow?logo=vitest&labelColor=black)](https://vitest.dev)
+[![codecov](https://codecov.io/gh/klodr/eslint-plugin-security-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/klodr/eslint-plugin-security-mcp)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/klodr/eslint-plugin-security-mcp/badge)](https://scorecard.dev/viewer/?uri=github.com/klodr/eslint-plugin-security-mcp)
+[![Socket Security](https://socket.dev/api/badge/npm/package/eslint-plugin-security-mcp)](https://socket.dev/npm/package/eslint-plugin-security-mcp)
+[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/klodr/eslint-plugin-security-mcp?labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
+[![npm version](https://img.shields.io/npm/v/eslint-plugin-security-mcp.svg)](https://www.npmjs.com/package/eslint-plugin-security-mcp)
+[![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-security-mcp.svg)](https://www.npmjs.com/package/eslint-plugin-security-mcp)
+[![Node.js Version](https://img.shields.io/node/v/eslint-plugin-security-mcp.svg)](https://nodejs.org)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/klodr/eslint-plugin-security-mcp/pulls)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 ESLint rules to detect prompt-injection vectors hidden in
