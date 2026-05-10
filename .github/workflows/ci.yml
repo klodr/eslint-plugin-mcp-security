@@ -18,40 +18,41 @@ jobs:
     name: Lint & Format
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.0
-
-      - name: Setup Node 22
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: klodr/.github/.github/actions/setup-node-mcp@cfc709297722fd29bb9e66a3d0f13529ba4d6295
         with:
           node-version: "22"
-          cache: "npm"
+          package-manager: "npm"
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: ESLint
-        run: npm run lint
+      - uses: klodr/.github/.github/actions/lint-format@cfc709297722fd29bb9e66a3d0f13529ba4d6295
+        with:
+          package-manager: "npm"
+          run-format-check: "false"
 
   test:
     name: Test (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
-        node: ["20", "22", "24"]
+        node: ["22", "24"]
     steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.0
-
-      - name: Setup Node ${{ matrix.node }}
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: klodr/.github/.github/actions/setup-node-mcp@cfc709297722fd29bb9e66a3d0f13529ba4d6295
         with:
           node-version: ${{ matrix.node }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
+          package-manager: "npm"
 
       - name: Test
+        if: matrix.node != '22'
         run: npm test
+
+      - name: Test with coverage
+        if: matrix.node == '22'
+        run: npm run test:coverage
+
+      - if: matrix.node == '22'
+        uses: klodr/.github/.github/actions/codecov-upload@cfc709297722fd29bb9e66a3d0f13529ba4d6295
+        with:
+          slug: klodr/eslint-plugin-mcp-security
