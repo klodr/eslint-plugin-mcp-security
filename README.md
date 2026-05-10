@@ -1,9 +1,9 @@
-# eslint-plugin-mcp-security
+# eslint-plugin-security-mcp
 
-[![npm version](https://img.shields.io/npm/v/eslint-plugin-mcp-security.svg)](https://www.npmjs.com/package/eslint-plugin-mcp-security)
-[![CI](https://github.com/klodr/eslint-plugin-mcp-security/actions/workflows/ci.yml/badge.svg)](https://github.com/klodr/eslint-plugin-mcp-security/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/klodr/eslint-plugin-mcp-security/actions/workflows/codeql.yml/badge.svg)](https://github.com/klodr/eslint-plugin-mcp-security/actions/workflows/codeql.yml)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/klodr/eslint-plugin-mcp-security/badge)](https://scorecard.dev/viewer/?uri=github.com/klodr/eslint-plugin-mcp-security)
+[![npm version](https://img.shields.io/npm/v/eslint-plugin-security-mcp.svg)](https://www.npmjs.com/package/eslint-plugin-security-mcp)
+[![CI](https://github.com/klodr/eslint-plugin-security-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/klodr/eslint-plugin-security-mcp/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/klodr/eslint-plugin-security-mcp/actions/workflows/codeql.yml/badge.svg)](https://github.com/klodr/eslint-plugin-security-mcp/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/klodr/eslint-plugin-security-mcp/badge)](https://scorecard.dev/viewer/?uri=github.com/klodr/eslint-plugin-security-mcp)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 ESLint rules to detect prompt-injection vectors hidden in
@@ -35,7 +35,7 @@ this plugin catches low-entropy encoded prose.
 ## Install
 
 ```bash
-npm install --save-dev eslint-plugin-mcp-security
+npm install --save-dev eslint-plugin-security-mcp
 ```
 
 Requires ESLint 9+ and Node 22.22.2+.
@@ -44,14 +44,14 @@ Requires ESLint 9+ and Node 22.22.2+.
 
 ```js
 // eslint.config.js
-import mcpSecurity from 'eslint-plugin-mcp-security';
+import mcpSecurity from 'eslint-plugin-security-mcp';
 
 export default [
   // ... your other config blocks
   {
-    plugins: { 'mcp-security': mcpSecurity },
+    plugins: { 'security-mcp': mcpSecurity },
     rules: {
-      'mcp-security/no-encoded-prompt-injection': 'error',
+      'security-mcp/no-encoded-prompt-injection': 'error',
     },
   },
 ];
@@ -77,7 +77,7 @@ If you have a legitimate base64 fixture (a test vector, a small embedded
 asset), opt out per-line:
 
 ```ts
-// eslint-disable-next-line mcp-security/no-encoded-prompt-injection
+// eslint-disable-next-line security-mcp/no-encoded-prompt-injection
 const fixture = 'aGVsbG8gd29ybGQgdGhpcyBpcyBhIGZpeHR1cmU=';
 ```
 

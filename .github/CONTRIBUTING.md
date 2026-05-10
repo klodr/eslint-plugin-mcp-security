@@ -1,4 +1,4 @@
-# Contributing to eslint-plugin-mcp-security
+# Contributing to eslint-plugin-security-mcp
 
 Thanks for considering a contribution.
 

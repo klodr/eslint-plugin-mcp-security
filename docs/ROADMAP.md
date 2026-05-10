@@ -1,6 +1,6 @@
 # Roadmap
 
-Public-facing plan for `eslint-plugin-mcp-security`. Items here are
+Public-facing plan for `eslint-plugin-security-mcp`. Items here are
 indicative — actual prioritisation depends on real-world MCP server
 threat reports and user feedback.
 

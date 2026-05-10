@@ -13,9 +13,9 @@ export default [
   // which intentionally contain encoded strings as fixtures.
   {
     files: ['src/**/*.js'],
-    plugins: { 'mcp-security': mcpSecurity },
+    plugins: { 'security-mcp': mcpSecurity },
     rules: {
-      'mcp-security/no-encoded-prompt-injection': 'error',
+      'security-mcp/no-encoded-prompt-injection': 'error',
     },
   },
   {

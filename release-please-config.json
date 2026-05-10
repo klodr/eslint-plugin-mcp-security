@@ -24,7 +24,7 @@
   ],
   "packages": {
     ".": {
-      "package-name": "eslint-plugin-mcp-security"
+      "package-name": "eslint-plugin-security-mcp"
     }
   }
 }

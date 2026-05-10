@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a bug in eslint-plugin-mcp-security
+description: Report a bug in eslint-plugin-security-mcp
 labels: [bug]
 body:
   - type: textarea
@@ -25,10 +25,10 @@ body:
         ```
         ```js
         // eslint.config.mjs
-        import mcpSecurity from 'eslint-plugin-mcp-security';
+        import mcpSecurity from 'eslint-plugin-security-mcp';
         export default [
-          { plugins: { 'mcp-security': mcpSecurity },
-            rules: { 'mcp-security/no-encoded-prompt-injection': 'error' } },
+          { plugins: { 'security-mcp': mcpSecurity },
+            rules: { 'security-mcp/no-encoded-prompt-injection': 'error' } },
         ];
         ```
         Expected: no error.
@@ -40,7 +40,7 @@ body:
     id: version
     attributes:
       label: Plugin version
-      description: From `npm ls eslint-plugin-mcp-security`
+      description: From `npm ls eslint-plugin-security-mcp`
       placeholder: "0.1.0"
     validations:
       required: true

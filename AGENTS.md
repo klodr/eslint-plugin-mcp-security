@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repository is **eslint-plugin-mcp-security** — an ESLint plugin
+This repository is **eslint-plugin-security-mcp** — an ESLint plugin
 that lints the source code of Model Context Protocol servers for
 prompt-injection vectors hidden in encoded strings (base64) and
 invisible Unicode characters.

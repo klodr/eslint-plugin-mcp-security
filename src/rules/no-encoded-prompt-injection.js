@@ -113,7 +113,7 @@ const rule = {
       description:
         'Disallow base64-encoded text and invisible Unicode characters that may carry hidden LLM instructions',
       recommended: true,
-      url: 'https://github.com/klodr/eslint-plugin-mcp-security#no-encoded-prompt-injection',
+      url: 'https://github.com/klodr/eslint-plugin-security-mcp#no-encoded-prompt-injection',
     },
     messages: {
       base64Text:

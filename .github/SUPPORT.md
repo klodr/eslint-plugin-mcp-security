@@ -1,6 +1,6 @@
 # 🆘 Support
 
-`eslint-plugin-mcp-security` is an open-source ESLint plugin maintained
+`eslint-plugin-security-mcp` is an open-source ESLint plugin maintained
 by **@klodr** in spare time. Use the channels below — opening an issue
 with the right template gives the fastest path to a triage decision.
 
@@ -8,7 +8,7 @@ with the right template gives the fastest path to a triage decision.
 
 Open an issue using the **Bug report** template. Include:
 
-- Plugin version (`npm ls eslint-plugin-mcp-security`).
+- Plugin version (`npm ls eslint-plugin-security-mcp`).
 - ESLint version + flat-config snippet showing the plugin block.
 - Node.js version (`node --version`).
 - Minimal failing source (or the offending string literal) and the rule
@@ -36,7 +36,7 @@ detector, ReDoS) — not the absence of a rule for a new attack class
 
 ## ❓ Questions
 
-Search [closed issues](https://github.com/klodr/eslint-plugin-mcp-security/issues?q=is%3Aissue+is%3Aclosed)
+Search [closed issues](https://github.com/klodr/eslint-plugin-security-mcp/issues?q=is%3Aissue+is%3Aclosed)
 first — most operational questions (per-line opt-out, file-level
 disable, integration with other linters) are already answered. If
 nothing matches, open a new issue with the **Bug report** template and
