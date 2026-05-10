@@ -45,7 +45,7 @@ this plugin catches low-entropy encoded prose.
 npm install --save-dev eslint-plugin-security-mcp
 ```
 
-Requires ESLint 10+ and Node 22.22.2+.
+Requires ESLint 10.3.0+ and Node 22.22.2+.
 
 ## Usage (flat config)
 
