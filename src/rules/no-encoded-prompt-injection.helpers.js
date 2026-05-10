@@ -33,7 +33,7 @@ const INJECTION_KEYWORDS = [
  * - U+FEFF       : zero-width no-break space (BOM)
  * - U+E0000–U+E007F : Tags block (used in known prompt-injection PoCs)
  */
-const INVISIBLE_UNICODE = /[​-‍﻿]|[\u{E0000}-\u{E007F}]/u;
+const INVISIBLE_UNICODE = /[\u200B-\u200D\uFEFF]|[\u{E0000}-\u{E007F}]/u;
 
 /** Candidate base64 strings: standard alphabet OR base64url, with optional padding. */
 const BASE64_CANDIDATE = /^[A-Za-z0-9+/_-]{24,}={0,2}$/;
