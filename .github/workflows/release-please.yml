@@ -1,0 +1,137 @@
+name: release-please
+
+# Google's release-please. Watches main for Conventional Commits,
+# accumulates release-worthy changes into a perpetually-updated
+# release PR, and on merge of that PR: creates the GitHub Release,
+# bumps the version in package.json + the .release-please-manifest.json,
+# and pushes the matching tag (which fires release.yml → signed
+# artifact + SBOM + npm publish with provenance).
+#
+# Replaces the manual "create release branch / npm version / convert
+# CHANGELOG / open PR / merge / tag / push" loop. The maintainer only
+# has to land conventional-commits-style PRs (`feat:`, `fix:`,
+# `chore(deps):`, ...) and merge the auto-generated release PR when
+# ready.
+#
+# Reference: https://github.com/googleapis/release-please-action
+
+on:
+  # Wait for the workflows that produce the required-status-checks
+  # listed in the `tags` ruleset (CI, CodeQL, EditorConfig check,
+  # Gitleaks, Lockfile lint, OSV-Scanner). Triggering on
+  # `push: branches: [main]` directly would race those workflows and
+  # the GitHub Release tag-creation call would be rejected because
+  # the squash commit is fresh and the checks are still pending.
+  workflow_run:
+    workflows:
+      - CI
+      - CodeQL
+      - EditorConfig check
+      - Gitleaks
+      - Lockfile lint
+      - OSV-Scanner
+    types: [completed]
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: release-please
+    runs-on: ubuntu-latest
+    # Skip immediately if the upstream workflow that triggered THIS run
+    # didn't succeed. The full multi-workflow gate is below; this is just
+    # a fast-fail to avoid spinning up the runner for an obviously-bad
+    # state. `workflow_dispatch` invocations always pass through.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      actions: read # the gate step below reads workflow-runs of OTHER workflows on this SHA
+      contents: write
+      pull-requests: write
+    steps:
+      # `on: workflow_run` with multiple workflows fires the downstream
+      # job once per upstream workflow completion (per GitHub Actions
+      # docs). The job-level `if:` above only validates the conclusion
+      # of THE triggering upstream — not all of them. Without an
+      # explicit cross-workflow gate, the FIRST upstream to succeed
+      # would fire release-please before the others reach `success`,
+      # the tag-creation call would still race the ruleset.
+      #
+      # This step polls the workflow-runs for the head SHA and asserts
+      # every required upstream is `success` before letting release-
+      # please run. The runs of the OTHER upstreams may still be
+      # `in_progress` at the moment we are triggered — the gate output
+      # will be `false` and the release-please step is skipped. Once
+      # the LAST upstream completes and triggers us, all required
+      # workflows are `success` and the gate passes.
+      - name: Gate until all required upstream workflows succeeded for this SHA
+        id: checks-gate
+        if: github.event_name == 'workflow_run'
+        uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
+        with:
+          script: |
+            const required = [
+              "CI",
+              "CodeQL",
+              "EditorConfig check",
+              "Gitleaks",
+              "Lockfile lint",
+              "OSV-Scanner",
+            ];
+            const sha = context.payload.workflow_run.head_sha;
+            const runs = await github.paginate(
+              github.rest.actions.listWorkflowRunsForRepo,
+              { owner: context.repo.owner, repo: context.repo.repo, head_sha: sha, per_page: 100 },
+            );
+            // Group runs by workflow name and pick the most recent one;
+            // a re-run that later failed must NOT be masked by an earlier
+            // success. Only the latest attempt's conclusion counts.
+            const latestByName = new Map();
+            for (const r of runs) {
+              if (!required.includes(r.name)) continue;
+              const prev = latestByName.get(r.name);
+              if (!prev || new Date(r.created_at) > new Date(prev.created_at)) {
+                latestByName.set(r.name, r);
+              }
+            }
+            const ok = required.every(
+              (name) => latestByName.get(name)?.conclusion === "success",
+            );
+            core.info(`SHA ${sha}: required=${JSON.stringify(required)} all-success=${ok}`);
+            core.setOutput("ready", ok ? "true" : "false");
+
+      # Mint a short-lived GitHub App installation token. Pushing the
+      # release PR + the release tag with this token (instead of the
+      # default GITHUB_TOKEN) makes the downstream `release.yml` workflow
+      # fire automatically — GitHub blocks workflow-triggered workflows
+      # when the originating actor is the runner's GITHUB_TOKEN, but
+      # treats App-installation tokens as human-equivalent.
+      - name: Mint release-please App token
+        id: app-token
+        if: github.event_name == 'workflow_dispatch' || steps.checks-gate.outputs.ready == 'true'
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        with:
+          client-id: ${{ secrets.RELEASE_PLEASE_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          # Scope the minted token to the strict set release-please needs
+          # (per googleapis/release-please-action docs). Without these,
+          # the token inherits every permission granted to the app
+          # installation — too broad for a workflow whose only job is
+          # opening release PRs and tagging releases.
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: release-please
+        if: github.event_name == 'workflow_dispatch' || steps.checks-gate.outputs.ready == 'true'
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

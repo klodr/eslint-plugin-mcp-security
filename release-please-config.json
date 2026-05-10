@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "node",
+  "include-component-in-tag": false,
+  "tag-separator": "-",
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": false,
+  "draft": false,
+  "prerelease": false,
+  "include-v-in-tag": true,
+  "changelog-sections": [
+    { "type": "feat", "section": "Added", "hidden": false },
+    { "type": "fix", "section": "Fixed", "hidden": false },
+    { "type": "perf", "section": "Changed", "hidden": false },
+    { "type": "deps", "section": "Changed", "hidden": false },
+    { "type": "deps-dev", "section": "Changed", "hidden": false },
+    { "type": "refactor", "section": "Changed", "hidden": false },
+    { "type": "revert", "section": "Fixed", "hidden": false },
+    { "type": "docs", "section": "Documentation", "hidden": false },
+    { "type": "chore", "section": "Changed", "hidden": false },
+    { "type": "ci", "section": "Changed", "hidden": false },
+    { "type": "test", "section": "Changed", "hidden": true },
+    { "type": "build", "section": "Changed", "hidden": true }
+  ],
+  "packages": {
+    ".": {
+      "package-name": "eslint-plugin-mcp-security"
+    }
+  }
+}
