@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-security-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "ESLint rules to detect prompt-injection vectors in Model Context Protocol server code",
   "license": "Apache-2.0",
   "author": "klodr",
