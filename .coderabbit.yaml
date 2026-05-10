@@ -29,7 +29,7 @@ reviews:
     Use Conventional Commits format: <type>[(<scope>)]: <subject>
     Types: feat, fix, docs, chore, refactor, test, ci, build, perf, revert.
     Scope is optional (e.g. `chore: ...` is valid).
-    Cap subject at 72 characters.
+    Cap the entire title (including type and optional scope) at 72 characters.
 
   auto_review:
     enabled: true
