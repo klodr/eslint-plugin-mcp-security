@@ -91,6 +91,6 @@ describe('helper invariants (property-based)', () => {
       { numRuns: 100 },
     );
     expect(codepointHex('A')).toBe('0041');
-    expect(codepointHex('​')).toBe('200B');
+    expect(codepointHex('\u200B')).toBe('200B');
   });
 });
