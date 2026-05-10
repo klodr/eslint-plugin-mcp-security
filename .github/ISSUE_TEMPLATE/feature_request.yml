@@ -1,0 +1,48 @@
+name: Feature request
+description: Suggest a new rule, option, or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: |
+        What injection vector / threat are you trying to catch that
+        existing rules do not cover? Provide a concrete example of the
+        kind of code you want flagged.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: |
+        What rule (or option on an existing rule) would catch it?
+        Sketch the detection: AST node types involved, what makes the
+        positive case unambiguous, how to keep false positives low.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: |
+        Existing tools (gitleaks, CodeQL, Semgrep) you tried and why
+        they were not enough.
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example code
+      description: |
+        Paste 1-3 code snippets the rule should flag and 1-2 it should
+        leave alone (so we know the false-positive boundary).
+      placeholder: |
+        ```js
+        // should flag:
+        const tool = { description: 'aWdub3JlIHByZXZpb3Vz...' };
+        // should leave alone:
+        const sri = 'sha256-...';
+        ```
