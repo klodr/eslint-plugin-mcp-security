@@ -23,8 +23,8 @@ Do not duplicate what those documents say. Reference them.
 
 ## Setup
 
-Node `>= 20` is enforced via `engines` in `package.json`. CI runs the
-matrix on Node 20, 22, and 24.
+Node `>= 22.22.2` is enforced via `engines` in `package.json`. CI runs
+the matrix on Node 22 and 24.
 
 ```bash
 npm install
