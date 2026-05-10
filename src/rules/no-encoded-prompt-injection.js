@@ -175,3 +175,9 @@ const rule = {
 };
 
 module.exports = rule;
+// Internal helpers exposed for property-based tests; not part of the
+// public API (no `_` prefix would still be visible to ESLint, which
+// ignores unknown rule keys, so this is safe to attach on the rule).
+module.exports.tryDecodeBase64AsText = tryDecodeBase64AsText;
+module.exports.looksLikeText = looksLikeText;
+module.exports.findInjectionKeyword = findInjectionKeyword;
