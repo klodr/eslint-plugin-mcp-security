@@ -41,17 +41,22 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "lint-staged": {
     "*.{js,mjs,cjs}": [
-      "eslint --max-warnings=0 --no-warn-ignored"
+      "eslint --max-warnings=0 --no-warn-ignored",
+      "prettier --write"
     ],
     "*.{yml,yaml}": [
-      "yamllint"
+      "yamllint",
+      "prettier --write"
     ],
     "*.md": [
-      "markdownlint-cli2"
+      "markdownlint-cli2",
+      "prettier --write"
     ]
   },
   "peerDependencies": {
@@ -62,11 +67,13 @@
     "@commitlint/config-conventional": "^21.0.0",
     "@vitest/coverage-v8": "^4.1.5",
     "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
     "fast-check": "^4.7.0",
     "husky": "^9.0.0",
     "lint-staged": "^17.0.4",
     "lockfile-lint": "^5.0.0",
     "markdownlint-cli2": "^0.22.1",
+    "prettier": "^3.8.3",
     "vitest": "^4.1.5",
     "yaml-lint": "^1.7.0"
   },

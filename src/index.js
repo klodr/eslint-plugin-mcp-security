@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-'use strict';
+"use strict";
 
-const pkg = require('../package.json');
-const noEncodedPromptInjection = require('./rules/no-encoded-prompt-injection.js');
+const pkg = require("../package.json");
+const noEncodedPromptInjection = require("./rules/no-encoded-prompt-injection.js");
 
 const plugin = {
   meta: {
@@ -14,16 +14,16 @@ const plugin = {
     version: pkg.version,
   },
   rules: {
-    'no-encoded-prompt-injection': noEncodedPromptInjection,
+    "no-encoded-prompt-injection": noEncodedPromptInjection,
   },
 };
 
 // Recommended config (flat-config style)
 plugin.configs = {
   recommended: {
-    plugins: { 'security-mcp': plugin },
+    plugins: { "security-mcp": plugin },
     rules: {
-      'security-mcp/no-encoded-prompt-injection': 'error',
+      "security-mcp/no-encoded-prompt-injection": "error",
     },
   },
 };

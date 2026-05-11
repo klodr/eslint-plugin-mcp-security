@@ -16,9 +16,5 @@
   "MD050": false, // strong style: asterisk OR underscore
   "MD060": false, // table column alignment: compact OR aligned, both OK
   "globs": ["**/*.md"],
-  "ignores": [
-    "node_modules/**",
-    "coverage/**",
-    "CHANGELOG.md"
-  ]
+  "ignores": ["node_modules/**", "coverage/**", "CHANGELOG.md"],
 }

@@ -22,6 +22,6 @@ jobs:
     with:
       enable-build-step: false
       run-format-check: false
-      build-test-job-name: 'Test'
+      build-test-job-name: "Test"
       enable-codecov-test-analytics: false
-      codecov-slug: 'klodr/eslint-plugin-security-mcp'
+      codecov-slug: "klodr/eslint-plugin-security-mcp"

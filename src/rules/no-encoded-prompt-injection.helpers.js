@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-'use strict';
+"use strict";
 
 /**
  * Phrases that, if found in a base64-decoded string, escalate severity
@@ -69,27 +69,27 @@ function tryDecodeBase64AsText(s) {
   if (SRI_PREFIX.test(s)) return null;
 
   // Normalize base64url to standard base64
-  const normalized = s.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+  const normalized = s.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
 
   let buf;
   /* v8 ignore next 4 -- Buffer.from('base64') is permissive and never throws on
      ASCII input; the catch is a defensive fail-closed guard for hypothetical
      runtime API changes. Not exercised by tests. */
   try {
-    buf = Buffer.from(padded, 'base64');
+    buf = Buffer.from(padded, "base64");
   } catch {
     return null;
   }
 
   // Round-trip check: Buffer.from is lenient and will swallow invalid chars,
   // so we re-encode and compare to ensure the input was actually valid base64.
-  const reencoded = buf.toString('base64');
-  if (reencoded.replace(/=+$/, '') !== padded.replace(/=+$/, '')) return null;
+  const reencoded = buf.toString("base64");
+  if (reencoded.replace(/=+$/, "") !== padded.replace(/=+$/, "")) return null;
 
   if (!looksLikeText(buf)) return null;
 
-  return buf.toString('utf8');
+  return buf.toString("utf8");
 }
 
 function findInjectionKeyword(text) {
@@ -100,12 +100,12 @@ function findInjectionKeyword(text) {
 }
 
 function previewOf(text, max = 60) {
-  const truncated = text.length > max ? text.slice(0, max) + '…' : text;
+  const truncated = text.length > max ? text.slice(0, max) + "…" : text;
   return JSON.stringify(truncated);
 }
 
 function codepointHex(ch) {
-  return ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
+  return ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
 }
 
 module.exports = {
