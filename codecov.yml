@@ -15,36 +15,6 @@ coverage:
         if_no_uploads: success
         if_not_found: success
 
-# Files excluded from coverage reporting. Codecov does not count these
-# when computing patch / project coverage, so a PR touching only
-# config or docs ends up with an "if_not_found: success" patch status
-# instead of failing at 0% (no source-line changes to cover).
-ignore:
-  - "**/*.md"
-  - "**/*.json"
-  - "**/*.jsonc"
-  - "**/*.json5"
-  - "**/*.yml"
-  - "**/*.yaml"
-  - "**/*.toml"
-  - "**/.editorconfig"
-  - "**/.prettierrc*"
-  - "**/.prettierignore"
-  - "**/.markdownlint*"
-  - "**/.commitlintrc*"
-  - "**/.gitleaks*"
-  - "**/.coderabbit*"
-  - "**/eslint.config.*"
-  - "**/vitest.config.*"
-  - "**/tsup.config.*"
-  - "**/.github/**"
-  - "**/.husky/**"
-  - "test/**"
-  - "tests/**"
-  - "coverage/**"
-  - "dist/**"
-  - "node_modules/**"
-
 comment:
   layout: "reach,diff,flags,files,footer"
   behavior: default
