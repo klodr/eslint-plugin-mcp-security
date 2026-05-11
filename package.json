@@ -37,7 +37,7 @@
   ],
   "scripts": {
     "lint": "eslint .",
-    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#coverage\" \"#CHANGELOG.md\"",
+    "lint:md": "markdownlint-cli2 \"**/*.md\"",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
