@@ -104,19 +104,19 @@ or directory level via your `eslint.config.js`.
 
 ## How it complements other tooling
 
-| Tool | Catches | Misses |
-|------|---------|--------|
-| **This plugin** | Base64 prose, invisible Unicode | High-entropy secrets, runtime injection |
-| **gitleaks** | API keys, tokens, SRI-shaped blobs | Low-entropy encoded prose |
-| **CodeQL** | Taint flows, dataflow vulnerabilities | Encoding-layer tricks |
-| **OSV-Scanner** | Known CVEs in dependencies | Source-level threats |
+| Tool            | Catches                               | Misses                                  |
+| --------------- | ------------------------------------- | --------------------------------------- |
+| **This plugin** | Base64 prose, invisible Unicode       | High-entropy secrets, runtime injection |
+| **gitleaks**    | API keys, tokens, SRI-shaped blobs    | Low-entropy encoded prose               |
+| **CodeQL**      | Taint flows, dataflow vulnerabilities | Encoding-layer tricks                   |
+| **OSV-Scanner** | Known CVEs in dependencies            | Source-level threats                    |
 
 Recommended layered defense for an MCP repo:
 
-```
-IDE (eslint extension)        → real-time feedback
+```text
+IDE (eslint extension)           → real-time feedback
 Pre-commit (husky + lint-staged) → eslint on staged files
-CI                            → eslint full scan + gitleaks + OSV-Scanner + ...
+CI                               → eslint full scan + gitleaks + OSV-Scanner + ...
 ```
 
 ## Contributing
@@ -133,7 +133,9 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+```text
+http://www.apache.org/licenses/LICENSE-2.0
+```
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
