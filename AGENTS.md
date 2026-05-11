@@ -58,7 +58,7 @@ failing in CI.
   on `src/**` (dogfooding) — `tests/**` are excluded because they
   intentionally contain encoded fixtures.
 - 2-space indent, LF line endings, UTF-8 (enforced by `.editorconfig`
-  + EditorConfig CI check).
+  and EditorConfig CI check).
 - `no-unused-vars` with `^_` exemption for prefixed args.
 
 ## Tests

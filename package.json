@@ -37,6 +37,7 @@
   ],
   "scripts": {
     "lint": "eslint .",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#coverage\" \"#CHANGELOG.md\"",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
@@ -45,19 +46,29 @@
   "lint-staged": {
     "*.{js,mjs,cjs}": [
       "eslint --max-warnings=0 --no-warn-ignored"
+    ],
+    "*.{yml,yaml}": [
+      "yamllint"
+    ],
+    "*.md": [
+      "markdownlint-cli2"
     ]
   },
   "peerDependencies": {
     "eslint": ">=10.3.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.0.0",
+    "@commitlint/config-conventional": "^21.0.0",
     "@vitest/coverage-v8": "^4.1.5",
     "eslint": "^10.3.0",
     "fast-check": "^4.7.0",
     "husky": "^9.0.0",
     "lint-staged": "^17.0.4",
     "lockfile-lint": "^5.0.0",
-    "vitest": "^4.1.5"
+    "markdownlint-cli2": "^0.22.1",
+    "vitest": "^4.1.5",
+    "yaml-lint": "^1.7.0"
   },
   "engines": {
     "node": ">=22.22.2"
