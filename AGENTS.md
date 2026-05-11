@@ -52,10 +52,10 @@ failing in CI.
 ## Code style
 
 - CommonJS in `src/` (`"type": "commonjs"` at package level), ESM in
-  `tests/` and `eslint.config.mjs` (the `.mjs` extension overrides the
+  `test/` and `eslint.config.mjs` (the `.mjs` extension overrides the
   package type).
 - ESLint flat config in `eslint.config.mjs`. The plugin lints itself
-  on `src/**` (dogfooding) — `tests/**` are excluded because they
+  on `src/**` (dogfooding) — `test/**` are excluded because they
   intentionally contain encoded fixtures.
 - 2-space indent, LF line endings, UTF-8 (enforced by `.editorconfig`
   and EditorConfig CI check).
@@ -64,7 +64,7 @@ failing in CI.
 ## Tests
 
 - Framework: **vitest** (`vitest run`).
-- Lives in `tests/`, name pattern `*.test.mjs` (ESM).
+- Lives in `test/`, name pattern `*.test.mjs` (ESM).
 - Tests use ESLint's built-in `RuleTester` from
   `eslint/use-at-your-own-risk`. Each rule must have BOTH `valid` and
   `invalid` cases, and invalid cases must assert the `messageId`
@@ -121,7 +121,7 @@ src/
   index.js                              plugin entrypoint (CommonJS)
   rules/
     no-encoded-prompt-injection.js      first rule
-tests/
+test/
   no-encoded-prompt-injection.test.mjs  RuleTester spec
 .github/
   workflows/                            CI, CodeQL, Scorecard, release...
@@ -137,7 +137,7 @@ eslint.config.mjs                       repo's own ESLint config
    for that rule.
 2. Wire it up in `src/index.js` under the exported `rules` map AND
    under `plugin.configs.recommended.rules`.
-3. Add tests in `tests/<rule-name>.test.mjs` using `RuleTester`.
+3. Add tests in `test/<rule-name>.test.mjs` using `RuleTester`.
    Cover both `valid` and `invalid`. Assert `messageId` on invalid.
 4. Document the rule in `README.md` under the **Rules** section.
 5. Update `CHANGELOG.md` under `[Unreleased]` -> `Added`.

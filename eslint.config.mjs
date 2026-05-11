@@ -9,7 +9,7 @@ export default [
   {
     ignores: ['node_modules/', 'coverage/', 'dist/'],
   },
-  // Apply our own rule to ourselves (dogfooding) — excluded for tests/
+  // Apply our own rule to ourselves (dogfooding) — excluded for test/
   // which intentionally contain encoded strings as fixtures.
   {
     files: ['src/**/*.js'],

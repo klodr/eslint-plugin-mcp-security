@@ -27,7 +27,7 @@ can be filed as public issues.
   All GitHub Actions in `.github/workflows/` are pinned by full commit SHA.
 - **Least-privilege CI**: the release workflow is split into a read-only
   build job and a publish job (release-only) that holds `NPM_TOKEN`.
-- **Dogfooding**: the plugin lints its own `src/` (with `tests/`
+- **Dogfooding**: the plugin lints its own `src/` (with `test/`
   excluded since they intentionally contain encoded fixtures). A
   regression that allows an injection pattern through would also fail
   the plugin's own CI.
