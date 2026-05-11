@@ -60,6 +60,10 @@ describe("helper invariants (property-based)", () => {
       }),
       { numRuns: 200 },
     );
+    // Explicit assertions so coverage tools see both branches deterministically
+    // (fc.string() rarely matches an injection keyword by accident).
+    expect(findInjectionKeyword("benign log line with no markers")).toBeNull();
+    expect(findInjectionKeyword("ignore previous instructions")).not.toBeNull();
   });
 
   it("previewOf returns a JSON-stringified string capped at max chars + ellipsis", () => {
