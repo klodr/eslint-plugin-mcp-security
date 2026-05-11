@@ -14,45 +14,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint & Format
-    runs-on: ubuntu-latest
-    steps:
-      - uses: klodr/.github/.github/actions/setup-node-mcp@cfc709297722fd29bb9e66a3d0f13529ba4d6295
-        with:
-          node-version: "22"
-          package-manager: "npm"
-
-      - uses: klodr/.github/.github/actions/lint-format@cfc709297722fd29bb9e66a3d0f13529ba4d6295
-        with:
-          package-manager: "npm"
-          run-format-check: "false"
-
-  test:
-    name: Test (Node ${{ matrix.node }})
-    runs-on: ubuntu-latest
+  ci:
+    uses: klodr/.github/.github/workflows/reusable-node-ci.yml@31517bee59b358945f7af0fdb3960085e0f3ec78
     permissions:
       contents: read
       id-token: write
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ["22", "24"]
-    steps:
-      - uses: klodr/.github/.github/actions/setup-node-mcp@cfc709297722fd29bb9e66a3d0f13529ba4d6295
-        with:
-          node-version: ${{ matrix.node }}
-          package-manager: "npm"
-
-      - name: Test
-        if: matrix.node != '22'
-        run: npm test
-
-      - name: Test with coverage
-        if: matrix.node == '22'
-        run: npm run test:coverage
-
-      - if: matrix.node == '22'
-        uses: klodr/.github/.github/actions/codecov-upload@cfc709297722fd29bb9e66a3d0f13529ba4d6295
-        with:
-          slug: klodr/eslint-plugin-security-mcp
+    with:
+      enable-build-step: false
+      run-format-check: false
+      build-test-job-name: 'Test'
+      enable-codecov-test-analytics: false
+      codecov-slug: 'klodr/eslint-plugin-security-mcp'
