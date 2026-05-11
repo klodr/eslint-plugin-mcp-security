@@ -80,7 +80,7 @@ reviews:
         - Every rule registered in `plugin.rules` is also exposed via
           a flat-config `recommended` preset under `plugin.configs`
         - The plugin meta.name matches package.json `name`
-    - path: "tests/**"
+    - path: "test/**"
       instructions: |
         ESLint RuleTester specs (Vitest harness). Each rule must have
         BOTH valid and invalid cases. For invalid cases, assert the

@@ -1,6 +1,6 @@
 # Gitleaks config for eslint-plugin-mcp-security.
 #
-# This repo intentionally contains base64-encoded strings in tests/ as
+# This repo intentionally contains base64-encoded strings in test/ as
 # injection fixtures. Allowlist them so gitleaks doesn't flag them as
 # secrets.
 
@@ -12,5 +12,5 @@ useDefault = true
 [allowlist]
 description = "Test fixtures contain intentional base64 strings"
 paths = [
-  '''tests/.*\.test\.js$''',
+  '''test/.*\.test\.js$''',
 ]

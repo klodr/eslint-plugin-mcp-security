@@ -30,12 +30,12 @@ npm test
 1. Create `src/rules/<rule-name>.js` with the standard ESLint rule shape
    (`meta` + `create`).
 2. Wire it up in `src/index.js` under the exported `rules` map.
-3. Add tests in `tests/<rule-name>.test.js` using `RuleTester` from ESLint.
+3. Add tests in `test/<rule-name>.test.js` using `RuleTester` from ESLint.
 4. Document the rule in `README.md` under the **Rules** section.
 
 ## Testing the rule end-to-end
 
-The `tests/` directory uses [Vitest](https://vitest.dev) with ESLint's
+The `test/` directory uses [Vitest](https://vitest.dev) with ESLint's
 built-in `RuleTester`. Run:
 
 ```bash
