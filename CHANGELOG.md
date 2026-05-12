@@ -39,10 +39,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * `no-encoded-prompt-injection` now flags short base64 payloads that
-  decode to known injection keywords (down to ~10 bytes / 16 base64
-  chars, e.g. `aWdub3JlIGFsbA==` → "ignore all"). Previously the
-  candidate-shape gate required ≥24 base64 chars and missed every
-  short attack phrase.
+  decode to known injection keywords. The smallest catch is a 10-byte
+  plaintext encoded as 14 base64 alphabet chars + 2 `=` padding (16
+  total chars, e.g. `aWdub3JlIGFsbA==` → "ignore all"). Previously
+  the candidate-shape gate required ≥24 alphabet chars and missed
+  every short attack phrase.
 * `no-encoded-prompt-injection` now validates SRI digest shape
   strictly before exempting it. The previous prefix-only check
   (`^sha(256|384|512)-`) let an attacker bypass detection by writing
