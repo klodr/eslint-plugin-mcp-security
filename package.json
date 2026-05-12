@@ -37,7 +37,7 @@
   ],
   "scripts": {
     "lint": "eslint .",
-    "lint:md": "markdownlint-cli2 \"**/*.md\"",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#CHANGELOG.md\"",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
@@ -57,6 +57,9 @@
     "*.md": [
       "prettier --write",
       "markdownlint-cli2"
+    ],
+    "*.{json,jsonc,json5}": [
+      "prettier --write"
     ]
   },
   "peerDependencies": {
