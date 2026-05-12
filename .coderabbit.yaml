@@ -45,7 +45,7 @@ reviews:
       # The codebase deliberately keeps comments to non-obvious WHY only.
       # ESLint rule meta-objects already carry the user-facing description;
       # forced JSDoc would just paraphrase them.
-      mode: off
+      mode: "off"
     title:
       mode: error
       requirements: |
