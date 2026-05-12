@@ -1,1 +1,39 @@
-npx lint-staged
+#!/usr/bin/env sh
+# Pre-commit template (klodr/* convention).
+#
+# Source of truth: klodr/.github -> .github/templates/husky/pre-commit
+# Copy verbatim into each consumer repo's .husky/pre-commit.
+#
+# Two responsibilities:
+#   1. Refuse the commit when a CLI invoked by lint-staged is missing
+#      both from PATH and from ./node_modules/.bin. lint-staged would
+#      otherwise die mid-commit with a cryptic "<tool>: command not
+#      found"; refuse upfront instead.
+#   2. Run lint-staged via the local binary path (NOT npx). Some npm
+#      versions still attempt a registry fetch on `npx --no` despite
+#      the --no flag; calling the binary directly removes any ambiguity
+#      and guarantees the lockfile-pinned version is what runs.
+#
+# A consumer repo whose lint-staged or scripts need more system tools
+# may extend REQUIRED_TOOLS in its own .husky/pre-commit copy.
+
+REQUIRED_TOOLS="yamllint"
+
+missing=""
+for tool in $REQUIRED_TOOLS; do
+  if ! command -v "$tool" >/dev/null 2>&1 \
+     && [ ! -x "./node_modules/.bin/$tool" ]; then
+    missing="$missing $tool"
+  fi
+done
+
+if [ -n "$missing" ]; then
+  printf '[husky] ERROR — required tooling missing:%s\n' "$missing" >&2
+  exit 1
+fi
+
+if [ ! -x "./node_modules/.bin/lint-staged" ]; then
+  printf '[husky] lint-staged is not installed locally — run npm install.\n' >&2
+  exit 1
+fi
+./node_modules/.bin/lint-staged
