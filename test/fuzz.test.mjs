@@ -88,7 +88,7 @@ describe("helper invariants (property-based)", () => {
 
   it("codepointHex returns a 4+-digit uppercase hex for any codepoint", () => {
     fc.assert(
-      fc.property(fc.integer({ min: 0, max: 0x10ffff }), (cp) => {
+      fc.property(fc.integer({ min: 0, max: 0x10_ff_ff }), (cp) => {
         const ch = String.fromCodePoint(cp);
         const result = codepointHex(ch);
         expect(result).toMatch(/^[0-9A-F]{4,6}$/);

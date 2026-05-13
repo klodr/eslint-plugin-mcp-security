@@ -120,7 +120,7 @@ function tryDecodeBase64AsText(s) {
   if (isLegitSRI(s)) return null;
 
   // Normalize base64url to standard base64
-  const normalized = s.replace(/-/g, "+").replace(/_/g, "/");
+  const normalized = s.replaceAll("-", "+").replaceAll("_", "/");
   const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
 
   let buf;
