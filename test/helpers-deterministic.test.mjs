@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   codepointHex,
+  extractBase64Candidates,
   findInjectionKeyword,
   looksLikeText,
   previewOf,
@@ -43,12 +44,49 @@ describe("helpers — deterministic tail-return coverage", () => {
     expect(tryDecodeBase64AsText("AAAAAAAAAAAAAAAAAAAAAAAAB")).toBeNull();
   });
 
-  it("tryDecodeBase64AsText returns null on SRI hash prefix", () => {
+  it("tryDecodeBase64AsText returns null on a strict-shape SRI digest", () => {
+    // sha256 digest = 32 bytes → 43 base64 alpha + 1 `=` padding. 43 A's
+    // encode 32 bytes of 0x00, which is the canonical shape of a legitimate
+    // sha256 SRI hash. The strict isLegitSRI check exempts this before any
+    // decode happens.
+    expect(tryDecodeBase64AsText("sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")).toBeNull();
+  });
+
+  it("tryDecodeBase64AsText does NOT exempt a wrong-length sha-prefixed string", () => {
+    // 32 A's after `sha256-` — NOT the legitimate 43+1 shape. The strict
+    // SRI check refuses to exempt it; the input then proceeds to decode and
+    // is rejected by `looksLikeText` (the bytes are mostly 0x00). This pins
+    // the regression fix for the previous loose `^sha(256|384|512)-` skip
+    // that let an attacker bypass detection with arbitrary base64 after the
+    // prefix.
     expect(tryDecodeBase64AsText("sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")).toBeNull();
+  });
+
+  it("tryDecodeBase64AsText surfaces short payloads that decode to injection keywords", () => {
+    // "ignore all" = 10 bytes → "aWdub3JlIGFsbA==" (14 alpha + 2 padding =
+    // 16 chars). Below the old {24,} threshold but above the new {12,}
+    // one — the decoded text matches /ignore (previous|prior|above|all)/
+    // so the keyword acceptance path returns the text even though the
+    // buffer is only 10 bytes (boundary of `looksLikeText`).
+    expect(tryDecodeBase64AsText("aWdub3JlIGFsbA==")).toBe("ignore all");
   });
 
   it("tryDecodeBase64AsText returns null on too-short candidate", () => {
     expect(tryDecodeBase64AsText("YWJjZA==")).toBeNull();
+  });
+
+  it("extractBase64Candidates yields base64-shaped tokens from a longer literal", () => {
+    // Embedded in prose — the iterator must surface the payload so the
+    // rule can decode it. The whole literal is NOT base64-shaped, so the
+    // anchored `BASE64_CANDIDATE` would miss it.
+    const literal = "Use this tool: aWdub3JlIGFsbA== please.";
+    const tokens = [...extractBase64Candidates(literal)];
+    expect(tokens).toContain("aWdub3JlIGFsbA==");
+  });
+
+  it("extractBase64Candidates yields nothing when no candidate is present", () => {
+    expect([...extractBase64Candidates("hello world")]).toEqual([]);
+    expect([...extractBase64Candidates("")]).toEqual([]);
   });
 
   it("findInjectionKeyword returns null when no INJECTION_KEYWORDS pattern matches", () => {

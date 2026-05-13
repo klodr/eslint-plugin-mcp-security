@@ -7,11 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0](https://github.com/klodr/eslint-plugin-security-mcp/compare/v0.1.0...v0.2.0) (2026-05-10)
 
-
 ### Added
 
 * initial commit ([504eb2f](https://github.com/klodr/eslint-plugin-security-mcp/commit/504eb2fb371e3dd794e8f94ef6a22e4e721f09b8))
-
 
 ### Changed
 
@@ -30,10 +28,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial `no-encoded-prompt-injection` rule detecting base64-encoded
+* Initial `no-encoded-prompt-injection` rule detecting base64-encoded
   text and invisible Unicode characters in string literals and template
   segments.
-- Recommended flat-config preset under `plugin.configs.recommended`.
+* Recommended flat-config preset under `plugin.configs.recommended`.
+* `no-encoded-prompt-injection` now scans for base64 payloads embedded
+  in surrounding prose (e.g. `"Use this tool: <payload> please."`),
+  not only literals that are themselves entirely base64-shaped.
+
+### Fixed
+
+* `no-encoded-prompt-injection` now flags short base64 payloads that
+  decode to known injection keywords. The smallest catch is a 10-byte
+  plaintext encoded as 14 base64 alphabet chars + 2 `=` padding (16
+  total chars, e.g. `aWdub3JlIGFsbA==` → "ignore all"). Previously
+  the candidate-shape gate required ≥24 alphabet chars and missed
+  every short attack phrase.
+* `no-encoded-prompt-injection` now validates SRI digest shape
+  strictly before exempting it. The previous prefix-only check
+  (`^sha(256|384|512)-`) let an attacker bypass detection by writing
+  `sha256-<arbitrary-base64>`; the new check requires the body to
+  match the exact length and padding shape of a legitimate digest.
 
 ## [0.1.0] - 2026-05-10
 

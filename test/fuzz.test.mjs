@@ -26,8 +26,10 @@ describe("helper invariants (property-based)", () => {
 
   it("round-trips: any printable text re-encoded as base64 decodes back", () => {
     fc.assert(
-      // BASE64_CANDIDATE requires >=24 chars in the encoded form, so the
-      // source text must be >=18 chars (each 3 bytes → 4 base64 chars).
+      // BASE64_CANDIDATE requires >=12 alpha chars in the encoded form
+      // (~9 bytes of source text). We use minLength: 18 here to exercise
+      // longer, more representative inputs that comfortably exceed the
+      // threshold AND the looksLikeText buffer-length floor (>=8 bytes).
       fc.property(
         fc.string({
           minLength: 18,
