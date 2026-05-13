@@ -1,0 +1,297 @@
+name: Verify published release
+
+# Runs after the publish job in release.yml has put the package on npm.
+# Exercises the three verification paths documented in .github/SECURITY.md so we
+# catch any regression in the release pipeline (broken provenance, missing
+# Sigstore bundle, asset upload mismatch) within minutes of publish.
+on:
+  workflow_run:
+    workflows: ["Release & npm publish"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Re-run the three .github/SECURITY.md verify paths
+    # Only fire when the upstream workflow was triggered by a tag push
+    # (event == 'push'), succeeded, and the ref looks like a version tag.
+    # We re-validate the exact tag format in the first step below.
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # gh release download
+      attestations: read # gh attestation verify
+    env:
+      PKG: "eslint-plugin-security-mcp"
+      TAG: ${{ github.event.workflow_run.head_branch }}
+    steps:
+      - name: Validate TAG format (semver, no shell metacharacters)
+        # head_branch is whatever ref triggered the upstream workflow. We
+        # already filtered on event=push and startsWith(v) at the job level,
+        # but TAG ends up in `cosign --certificate-identity ...@refs/tags/${TAG}`
+        # and in shell strings, so re-validate the bytes before they reach
+        # any subprocess. Reject anything that isn't strict semver.
+        run: |
+          if ! printf '%s' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "ERROR: refusing to verify with TAG='$TAG' — not a semver tag" >&2
+            exit 1
+          fi
+
+      - name: Setup Node 22
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Wait for npm to propagate the new version AND its attestations
+        # npm publishes in steps: version metadata → tarball → provenance
+        # attestations → registry signatures. Polling on .version alone
+        # races against .dist.attestations.url or .dist.signatures still
+        # being absent when Path 1 runs. Wait for all three, then persist
+        # the validated packument under $RUNNER_TEMP and expose its path
+        # via $GITHUB_ENV so Path 1 below can reuse THIS snapshot instead
+        # of running a fresh `npm view` (which would reintroduce the same
+        # propagation race that this step exists to defeat).
+        run: |
+          VERSION="${TAG#v}"
+          # Allow ~5 min total. Attestation / signature propagation can
+          # trail the version record by 1-2 min on busy days.
+          ATTEMPTS=17
+          SLEEP=20
+          for i in $(seq 1 $ATTEMPTS); do
+            META=$(npm view "${PKG}@${VERSION}" --json 2>/dev/null || echo '{}')
+            VER_OK=$(printf '%s' "$META" | jq -r '.version // ""')
+            ATT_OK=$(printf '%s' "$META" | jq -r '.dist.attestations.url // ""')
+            SIG_OK=$(printf '%s' "$META" | jq -r '.dist.signatures | length // 0')
+            if [ "$VER_OK" = "$VERSION" ] && [ -n "$ATT_OK" ] && [ "${SIG_OK:-0}" -ge 1 ]; then
+              META_PATH="$RUNNER_TEMP/npm-meta.json"
+              printf '%s' "$META" > "$META_PATH"
+              echo "NPM_META_PATH=$META_PATH" >> "$GITHUB_ENV"
+              echo "npm OK: ${PKG}@${VERSION} (attestations: $ATT_OK, signatures: $SIG_OK)"
+              exit 0
+            fi
+            echo "Waiting for ${PKG}@${VERSION} (version=$VER_OK, att=${ATT_OK:-<missing>}, sigs=${SIG_OK:-0}) — $i/$ATTEMPTS"
+            sleep $SLEEP
+          done
+          echo "Timeout waiting for ${PKG}@${VERSION} after ${ATTEMPTS} attempts" >&2
+          exit 1
+
+      - name: Path 1 — npm provenance via npm CLI
+        # Scorecard's Pinned-Dependencies wants every npm install to be
+        # pinned by hash. We download the tarball explicitly, verify both
+        # SHA-1 (.dist.shasum, legacy) AND SHA-512 SRI (.dist.integrity,
+        # current npm standard), then install the local file.
+        run: |
+          VERSION="${TAG#v}"
+          # Reuse the packument validated by the wait step above (path
+          # exported via $GITHUB_ENV). Re-running `npm view` here would
+          # race against attestation / signature propagation a second
+          # time on busy days.
+          META=$(cat "$NPM_META_PATH")
+          ATT=$(echo "$META" | jq -er '.dist.attestations.url')
+          TARBALL_URL=$(echo "$META" | jq -er '.dist.tarball')
+          EXPECTED_SHA=$(echo "$META" | jq -er '.dist.shasum')
+          EXPECTED_INTEGRITY=$(echo "$META" | jq -er '.dist.integrity')
+          ALGO="${EXPECTED_INTEGRITY%%-*}"
+          EXPECTED_B64="${EXPECTED_INTEGRITY#*-}"
+          echo "Attestation URL: $ATT"
+          echo "Tarball: $TARBALL_URL"
+          echo "Expected sha1=$EXPECTED_SHA"
+          echo "Expected $ALGO=$EXPECTED_B64"
+          mkdir verify-tmp && cd verify-tmp
+          # Fetch the attestation document itself. The packument carrying
+          # `.dist.attestations.url` is not enough on its own: a stale,
+          # empty, or temporarily-unreachable document would otherwise
+          # let Path 1 pass silently. Validate that the body is non-empty
+          # AND that the first JSONL row is a DSSE bundle (`.payloadType`).
+          curl --fail --show-error --silent --location \
+               --retry 3 --retry-all-errors \
+               --connect-timeout 10 --max-time 120 \
+               -o npm-attestations.jsonl "$ATT"
+          test -s npm-attestations.jsonl || {
+            echo "ERROR: npm attestation document at $ATT is empty" >&2
+            exit 1
+          }
+          head -1 npm-attestations.jsonl | jq -e '.payloadType' > /dev/null || {
+            echo "ERROR: npm attestation document is not valid DSSE JSONL (first line missing .payloadType)" >&2
+            head -1 npm-attestations.jsonl >&2
+            exit 1
+          }
+          echo "npm attestations: $(wc -l < npm-attestations.jsonl) row(s) fetched from $ATT"
+          curl --fail --show-error --silent --location \
+               --retry 3 --retry-all-errors \
+               --connect-timeout 10 --max-time 120 \
+               -O "$TARBALL_URL"
+          TARBALL=$(basename "$TARBALL_URL")
+          ACTUAL_SHA=$(sha1sum "$TARBALL" | awk '{print $1}')
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "ERROR: tarball SHA-1 mismatch (expected $EXPECTED_SHA, got $ACTUAL_SHA)" >&2
+            exit 1
+          fi
+          case "$ALGO" in
+            sha512) ACTUAL_B64=$(sha512sum "$TARBALL" | awk '{print $1}' | xxd -r -p | base64 -w0) ;;
+            sha384) ACTUAL_B64=$(sha384sum "$TARBALL" | awk '{print $1}' | xxd -r -p | base64 -w0) ;;
+            sha256) ACTUAL_B64=$(sha256sum "$TARBALL" | awk '{print $1}' | xxd -r -p | base64 -w0) ;;
+            *) echo "ERROR: unsupported integrity algorithm: $ALGO" >&2; exit 1 ;;
+          esac
+          if [ "$ACTUAL_B64" != "$EXPECTED_B64" ]; then
+            echo "ERROR: tarball $ALGO integrity mismatch" >&2
+            echo "  expected: $EXPECTED_B64" >&2
+            echo "  actual:   $ACTUAL_B64" >&2
+            exit 1
+          fi
+
+          # ECDSA P-256 verification of the npm registry signature on
+          # "<pkg>@<version>:<integrity>". `npm audit signatures` would do
+          # this for us, but it requires a registry-resolved install (which
+          # would defeat Scorecard's Pinned-Dependencies check). So we do it
+          # by hand against the public keys at /-/npm/v1/keys.
+          SIG_COUNT=$(echo "$META" | jq -r '.dist.signatures | length // 0')
+          if [ "${SIG_COUNT:-0}" -lt 1 ]; then
+            echo "ERROR: no .dist.signatures on ${PKG}@${VERSION} (npm registry didn't sign — refusing to proceed)" >&2
+            exit 1
+          fi
+          KEYID=$(echo "$META" | jq -er '.dist.signatures[0].keyid')
+          SIG_B64=$(echo "$META" | jq -er '.dist.signatures[0].sig')
+          KEYS_JSON=$(curl --fail --show-error --silent --max-time 30 \
+                       --retry 3 --retry-all-errors \
+                       https://registry.npmjs.org/-/npm/v1/keys)
+          PUBKEY_B64=$(echo "$KEYS_JSON" | jq -r --arg keyid "$KEYID" '.keys[] | select(.keyid == $keyid) | .key')
+          if [ -z "$PUBKEY_B64" ]; then
+            echo "ERROR: public key for keyid '$KEYID' not found in npm registry keys" >&2
+            echo "Available keyids in /-/npm/v1/keys:" >&2
+            echo "$KEYS_JSON" | jq -r '.keys[].keyid' >&2
+            exit 1
+          fi
+          {
+            echo "-----BEGIN PUBLIC KEY-----"
+            echo "$PUBKEY_B64" | fold -w 64
+            echo "-----END PUBLIC KEY-----"
+          } > npm-pubkey.pem
+          echo "$SIG_B64" | base64 -d > npm-sig.bin
+          SIGNED_MSG="${PKG}@${VERSION}:${EXPECTED_INTEGRITY}"
+          if ! printf '%s' "$SIGNED_MSG" | openssl dgst -sha256 \
+                  -verify npm-pubkey.pem -signature npm-sig.bin; then
+            echo "ERROR: npm registry ECDSA signature verification failed" >&2
+            echo "  keyid:   $KEYID" >&2
+            echo "  message: $SIGNED_MSG" >&2
+            exit 1
+          fi
+          echo "npm registry signature: OK ($KEYID)"
+          echo "Path 1 OK: SHA-1 + SHA-512 SRI + ECDSA registry signature all matched."
+          # NB: no `npm install` / `npm audit signatures` step. Everything
+          # `npm audit signatures` would have checked is already done above
+          # (and more strictly): the tarball bytes are SHA-512 verified
+          # against `dist.integrity`, and the registry's ECDSA signature on
+          # `<pkg>@<version>:<integrity>` is verified by hand against the
+          # public keys at /-/npm/v1/keys. Skipping the install also keeps
+          # Scorecard's Pinned-Dependencies check clean (no `npm install`
+          # invocation in the workflow at all).
+
+      - name: Download signed assets from the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p verify-assets
+          gh release download "$TAG" \
+            --repo "${{ github.repository }}" \
+            --pattern 'index.js' \
+            --pattern 'index.js.sigstore' \
+            --pattern 'index.js.intoto.jsonl' \
+            --dir verify-assets
+
+      - name: Assert all three release assets were actually downloaded
+        # gh release download silently skips missing patterns. We must fail
+        # fast if any of the three artifacts is absent — a missing
+        # .intoto.jsonl would mean Scorecard's Signed-Releases check drops
+        # back to 8/10 even though the rest of the verify steps still pass.
+        run: |
+          for f in index.js index.js.sigstore index.js.intoto.jsonl; do
+            test -f "verify-assets/$f" || { echo "ERROR: release asset missing: $f" >&2; exit 1; }
+          done
+
+      - name: Bind .intoto.jsonl subject digest to verify-assets/index.js
+        # The DSSE envelope in `.intoto.jsonl` carries the artifact's
+        # sha256 inside `.subject[].digest.sha256`. Pure existence of the
+        # file (asserted above) is not enough — a stale or swapped
+        # `.intoto.jsonl` uploaded out of band would still pass Paths 2/3
+        # because those re-derive their target from the BLOB, not the
+        # JSONL. Decode the DSSE payload, find the subject entry whose
+        # name matches index.js, and refuse to proceed if its digest
+        # doesn't match the actual artifact bytes.
+        run: |
+          set -euo pipefail
+          # JSONL: typically one DSSE envelope per file but the format
+          # is multi-row. Concatenating `.payload` across rows via `jq`
+          # would corrupt the base64 decode — read only the first row,
+          # mirroring the `head -1` discipline already applied to
+          # `npm-attestations.jsonl` in Path 1. `.payload` is base64-
+          # encoded in-toto Statement (v0.1 or v1).
+          # `actions/attest-build-provenance` currently emits v1
+          # (`https://in-toto.io/Statement/v1`).
+          PAYLOAD=$(head -1 verify-assets/index.js.intoto.jsonl \
+                    | jq -r '.payload' \
+                    | base64 -d)
+          if ! echo "$PAYLOAD" | jq -e '.subject' > /dev/null; then
+            echo "ERROR: .intoto.jsonl payload missing .subject array" >&2
+            exit 1
+          fi
+          # Match on either the bare basename (what attest-build-provenance
+          # uses by default when fed a single subject-path) OR the full
+          # workspace-relative path some emitters use.
+          EXPECTED_SHA256=$(echo "$PAYLOAD" | jq -r '
+            .subject[]
+              | select(.name == "index.js" or .name == "verify-assets/index.js")
+              | .digest.sha256 // empty')
+          if [ -z "$EXPECTED_SHA256" ]; then
+            echo "ERROR: .intoto.jsonl has no sha256 subject for index.js" >&2
+            echo "  subjects in payload:" >&2
+            echo "$PAYLOAD" | jq '.subject' >&2
+            exit 1
+          fi
+          ACTUAL_SHA256=$(sha256sum verify-assets/index.js | awk '{print $1}')
+          if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+            echo "ERROR: .intoto.jsonl subject digest does not match index.js" >&2
+            echo "  intoto says: $EXPECTED_SHA256" >&2
+            echo "  actual:      $ACTUAL_SHA256" >&2
+            exit 1
+          fi
+          echo "intoto subject binding OK: index.js sha256=$EXPECTED_SHA256"
+
+      - name: Path 2 — gh attestation verify
+        # Pin the exact Fulcio SAN (workflow path + ref) and the source ref.
+        # --cert-identity is mutually exclusive with --signer-workflow in the
+        # current gh CLI: the cert-identity already encodes the workflow path
+        # AND the tag ref, so it is strictly more specific.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh attestation verify verify-assets/index.js \
+            --repo "${{ github.repository }}" \
+            --source-ref "refs/tags/${TAG}" \
+            --cert-identity "https://github.com/${{ github.repository }}/.github/workflows/release.yml@refs/tags/${TAG}"
+
+      - name: Path 3 — cosign verify-blob-attestation
+        # Same hardening: replace the open identity-regexp with the exact
+        # Fulcio SAN that release.yml at this tag would have produced.
+        #
+        # `--type slsaprovenance1` pins the predicate to SLSA Provenance
+        # v1 — the shape `actions/attest-build-provenance@v4.x` emits.
+        # Cosign defaults to `--type custom` and would otherwise reject
+        # the bundle with `invalid predicate type, expected custom got
+        # https://slsa.dev/provenance/v1`.
+        run: |
+          cosign verify-blob-attestation \
+            --type slsaprovenance1 \
+            --bundle verify-assets/index.js.sigstore \
+            --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/release.yml@refs/tags/${TAG}" \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            verify-assets/index.js
