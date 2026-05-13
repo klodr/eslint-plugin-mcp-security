@@ -229,10 +229,16 @@ jobs:
         # doesn't match the actual artifact bytes.
         run: |
           set -euo pipefail
-          # DSSE: one JSON line; `.payload` is base64-encoded in-toto
-          # Statement (v0.1 or v1). `actions/attest-build-provenance`
-          # currently emits v1 (`https://in-toto.io/Statement/v1`).
-          PAYLOAD=$(jq -r '.payload' verify-assets/index.js.intoto.jsonl \
+          # JSONL: typically one DSSE envelope per file but the format
+          # is multi-row. Concatenating `.payload` across rows via `jq`
+          # would corrupt the base64 decode — read only the first row,
+          # mirroring the `head -1` discipline already applied to
+          # `npm-attestations.jsonl` in Path 1. `.payload` is base64-
+          # encoded in-toto Statement (v0.1 or v1).
+          # `actions/attest-build-provenance` currently emits v1
+          # (`https://in-toto.io/Statement/v1`).
+          PAYLOAD=$(head -1 verify-assets/index.js.intoto.jsonl \
+                    | jq -r '.payload' \
                     | base64 -d)
           if ! echo "$PAYLOAD" | jq -e '.subject' > /dev/null; then
             echo "ERROR: .intoto.jsonl payload missing .subject array" >&2
